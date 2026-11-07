@@ -1,0 +1,121 @@
+<h1>Pharmacy Eli stock</h1>
+
+<p id="summary"></p>
+
+<input id="name" placeholder="Drug name">
+<input id="batch" placeholder="Batch number">
+<input id="quantity" type="number" placeholder="Quantity">
+<input id="expiry" type="date">
+<button onclick="addDrug()">Add drug</button>
+
+<p><input id="search" placeholder="Search a drug" oninput="showDrugs()"></p>
+
+<table border="1">
+  <thead>
+    <tr><th>Name</th><th>Batch</th><th>Quantity</th><th>Expiry</th><th>Days left</th><th>Sell</th><th>Delete</th></tr>
+  </thead>
+  <tbody id="stockList"></tbody>
+</table>
+
+<script>
+var drugs = [];
+
+try {
+  drugs = JSON.parse(localStorage.getItem("drugs")) || [];
+} catch (e) {
+  drugs = [];
+}
+
+function saveDrugs() {
+  try {
+    localStorage.setItem("drugs", JSON.stringify(drugs));
+  } catch (e) {}
+}
+
+function addDrug() {
+  var name = document.getElementById("name").value;
+  if (name === "" || document.getElementById("expiry").value === "") {
+    alert("Please enter the drug name and expiry date.");
+    return;
+  }
+
+  drugs.push({
+    name: name,
+    batch: document.getElementById("batch").value,
+    quantity: Number(document.getElementById("quantity").value),
+    expiry: document.getElementById("expiry").value
+  });
+  saveDrugs();
+  showDrugs();
+}
+
+function sellDrug(index) {
+  if (drugs[index].quantity > 0) {
+    drugs[index].quantity = drugs[index].quantity - 1;
+  }
+  saveDrugs();
+  showDrugs();
+}
+
+function deleteDrug(index) {
+  if (confirm("Delete this drug?")) {
+    drugs.splice(index, 1);
+    saveDrugs();
+    showDrugs();
+  }
+}
+
+function showDrugs() {
+  drugs.sort(function (a, b) {
+    return new Date(a.expiry) - new Date(b.expiry);
+  });
+
+  var searchText = document.getElementById("search").value.toLowerCase();
+  var list = document.getElementById("stockList");
+  list.innerHTML = "";
+
+  var expiredCount = 0;
+  var soonCount = 0;
+  var lowCount = 0;
+
+  for (var i = 0; i < drugs.length; i++) {
+    var d = drugs[i];
+    var daysLeft = Math.floor((new Date(d.expiry) - new Date()) / 86400000);
+
+    var color = "lightgreen";
+    if (daysLeft < 0) {
+      color = "tomato";
+      expiredCount++;
+    } else if (daysLeft <= 30) {
+      color = "orange";
+      soonCount++;
+    }
+
+    if (d.quantity <= 5) {
+      lowCount++;
+    }
+
+    if (d.name.toLowerCase().indexOf(searchText) === -1) {
+      continue;
+    }
+
+    var quantityText = d.quantity;
+    if (d.quantity <= 5) {
+      quantityText = d.quantity + " <b style='color:red'>LOW</b>";
+    }
+
+    list.innerHTML +=
+      "<tr style='background:" + color + "'><td>" + d.name + "</td><td>" +
+      d.batch + "</td><td>" + quantityText + "</td><td>" + d.expiry +
+      "</td><td>" + daysLeft + "</td><td><button onclick='sellDrug(" + i +
+      ")'>Sell 1</button></td><td><button onclick='deleteDrug(" + i +
+      ")'>Delete</button></td></tr>";
+  }
+
+  document.getElementById("summary").innerHTML =
+    "<b>Expired: " + expiredCount + "</b> | Expiring within 30 days: " +
+    soonCount + " | Low stock: " + lowCount;
+}
+
+showDrugs();
+  </script>
