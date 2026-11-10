@@ -13,13 +13,60 @@
     color: #1f2d3a;
   }
   header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: white;
+    border-bottom: 1px solid #d5e3d5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo svg { width: 34px; height: 34px; }
+  .logo span { font-size: 20px; font-weight: bold; color: #0b6e4f; }
+  #menuButton {
+    background: none;
+    color: #0b6e4f;
+    font-size: 28px;
+    padding: 0 6px;
+  }
+  #menu {
+    display: none;
+    position: sticky;
+    top: 58px;
+    z-index: 9;
+    background: white;
+    border-bottom: 1px solid #d5e3d5;
+  }
+  #menu.open { display: block; }
+  #menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: white;
+    color: #0b6e4f;
+    border-radius: 0;
+    border-bottom: 1px solid #e0ece0;
+    padding: 16px 20px;
+    font-size: 15px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  #menu button.active { background: #e6f2e6; font-weight: bold; }
+  main { padding: 14px; max-width: 900px; margin: 0 auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .hero {
     background: #0b6e4f;
     color: white;
-    padding: 18px 16px;
+    border-radius: 10px;
+    padding: 22px 16px;
+    margin-bottom: 14px;
   }
-  header h1 { margin: 0; font-size: 24px; }
-  header p { margin: 4px 0 0; font-size: 14px; opacity: 0.9; }
-  main { padding: 14px; max-width: 900px; margin: 0 auto; }
+  .hero h1 { margin: 0 0 8px; font-size: 24px; }
+  .hero p { margin: 0; font-size: 15px; opacity: 0.95; }
   .card {
     background: white;
     border-radius: 10px;
@@ -60,85 +107,105 @@
   button.grey { background: #607d8b; }
   button.sell { background: #1976d2; padding: 8px 10px; font-size: 13px; }
   button.delete { background: #c62828; padding: 8px 10px; font-size: 13px; }
+  .big-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+  .big-buttons button { flex: 1 1 140px; }
   .scan-buttons { display: flex; gap: 8px; margin-bottom: 8px; }
   #reader { width: 100%; max-width: 320px; }
   .table-wrap { overflow-x: auto; }
   table { border-collapse: collapse; width: 100%; font-size: 14px; }
   th { background: #0b6e4f; color: white; padding: 9px; text-align: left; }
   td { padding: 9px; border-bottom: 1px solid #e0e6ea; }
+  .about p, .contact p { line-height: 1.5; margin: 8px 0; }
   footer { text-align: center; padding: 16px; font-size: 12px; color: #607d8b; }
-  .logo { display: flex; align-items: center; gap: 10px; }
-  .logo svg { width: 38px; height: 38px; }
-  nav { margin-top: 10px; }
-  nav a { color: white; margin-right: 14px; font-size: 14px; text-decoration: underline; }
-  .about p, .contact p { line-height: 1.5; margin: 6px 0; }
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">
-    <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="white"/><rect x="17" y="8" width="6" height="24" fill="#0b6e4f"/><rect x="8" y="17" width="24" height="6" fill="#0b6e4f"/></svg>
-    <h1>PharmaStock</h1>
+    <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#0b6e4f"/><rect x="17" y="8" width="6" height="24" fill="white"/><rect x="8" y="17" width="24" height="6" fill="white"/></svg>
+    <span>PharmaStock</span>
   </div>
-  <p>Control your stock. Avoid expired drugs.</p>
-  <nav>
-    <a href="#about">About</a>
-    <a href="#contact">Contact</a>
-  </nav>
+  <button id="menuButton" onclick="toggleMenu()">&#9776;</button>
 </header>
+
+<nav id="menu">
+  <button data-page="home" class="active" onclick="showPage('home')">Home</button>
+  <button data-page="add" onclick="showPage('add')">Add drug</button>
+  <button data-page="stock" onclick="showPage('stock')">Stock</button>
+  <button data-page="about" onclick="showPage('about')">About</button>
+  <button data-page="contact" onclick="showPage('contact')">Contact</button>
+</nav>
 
 <main>
 
-  <div class="card">
-    <h2>Today's alerts</h2>
-    <div class="summary">
-      <div class="badge red"><b id="expiredCount">0</b>Expired</div>
-      <div class="badge orange"><b id="soonCount">0</b>Expiring in 30 days</div>
-      <div class="badge blue"><b id="lowCount">0</b>Low stock</div>
+  <div class="page active" id="page-home">
+    <div class="hero">
+      <h1>Control your stock. Avoid expired drugs.</h1>
+      <p>Follow every drug, see the expiry dates, and sell the oldest first.</p>
+    </div>
+    <div class="card">
+      <h2>Today's alerts</h2>
+      <div class="summary">
+        <div class="badge red"><b id="expiredCount">0</b>Expired</div>
+        <div class="badge orange"><b id="soonCount">0</b>Expiring in 30 days</div>
+        <div class="badge blue"><b id="lowCount">0</b>Low stock</div>
+      </div>
+    </div>
+    <div class="big-buttons">
+      <button onclick="showPage('add')">Add a drug</button>
+      <button onclick="showPage('stock')">See my stock</button>
     </div>
   </div>
 
-  <div class="card">
-    <h2>Add a drug</h2>
-    <div class="scan-buttons">
-      <button onclick="startScan()">Scan code</button>
-      <button class="grey" onclick="stopScan()">Close camera</button>
-    </div>
-    <div id="reader"></div>
-    <input id="barcode" placeholder="Barcode number">
-    <input id="name" placeholder="Drug name">
-    <input id="batch" placeholder="Batch number">
-    <input id="quantity" type="number" placeholder="Quantity">
-    <input id="expiry" type="date">
-    <button onclick="addDrug()">Add drug</button>
-  </div>
-
-  <div class="card">
-    <h2>Your stock</h2>
-    <input id="search" placeholder="Search a drug" oninput="showDrugs()">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Name</th><th>Batch</th><th>Quantity</th><th>Expiry</th><th>Days left</th><th>Sell</th><th>Delete</th></tr>
-        </thead>
-        <tbody id="stockList"></tbody>
-      </table>
+  <div class="page" id="page-add">
+    <div class="card">
+      <h2>Add a drug</h2>
+      <div class="scan-buttons">
+        <button onclick="startScan()">Scan code</button>
+        <button class="grey" onclick="stopScan()">Close camera</button>
+      </div>
+      <div id="reader"></div>
+      <input id="barcode" placeholder="Barcode number">
+      <input id="name" placeholder="Drug name">
+      <input id="batch" placeholder="Batch number">
+      <input id="quantity" type="number" placeholder="Quantity">
+      <input id="expiry" type="date">
+      <button onclick="addDrug()">Add drug</button>
     </div>
   </div>
 
-  <div class="card about" id="about">
-    <h2>About</h2>
-    <p>PharmaStock helps pharmacists follow their stock and see which drugs are close to their expiry date, so they can sell them first.</p>
-    <p>Created by Ishimwe Elisee, pharmacy student.</p>
-    <p><b>Privacy:</b> the drugs you add are saved only on your own phone. Nobody else can see them.</p>
+  <div class="page" id="page-stock">
+    <div class="card">
+      <h2>Your stock</h2>
+      <input id="search" placeholder="Search a drug" oninput="showDrugs()">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Batch</th><th>Quantity</th><th>Expiry</th><th>Days left</th><th>Sell</th><th>Delete</th></tr>
+          </thead>
+          <tbody id="stockList"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
-  <div class="card contact" id="contact">
-    <h2>Contact</h2>
-    <p><b>ISHIMWE Elisee</b></p>
-    <p>Email: <a href="mailto:ishimweeli501@gmail.com">ishimweeli501@gmail.com</a></p>
-    <p>Phone: <a href="tel:+250793284164">+250793284164</a></p>
+  <div class="page" id="page-about">
+    <div class="card about">
+      <h2>About</h2>
+      <p>PharmaStock helps pharmacists follow their stock and see which drugs are close to their expiry date, so they can sell them first.</p>
+      <p>Created by Ishimwe Elisee, pharmacy student.</p>
+      <p><b>Privacy:</b> the drugs you add are saved only on your own phone. Nobody else can see them.</p>
+    </div>
+  </div>
+
+  <div class="page" id="page-contact">
+    <div class="card contact">
+      <h2>Contact</h2>
+      <p><b>ISHIMWE Elisee</b></p>
+      <p>Email: <a href="mailto:ishimweeli501@gmail.com">ishimweeli501@gmail.com</a></p>
+      <p>Phone: <a href="tel:+250793284164">+250793284164</a></p>
+    </div>
   </div>
 
 </main>
@@ -164,6 +231,41 @@ function saveDrugs() {
     localStorage.setItem("drugs", JSON.stringify(drugs));
     localStorage.setItem("barcodes", JSON.stringify(barcodes));
   } catch (e) {}
+}
+
+function toggleMenu() {
+  var menu = document.getElementById("menu");
+  var button = document.getElementById("menuButton");
+  if (menu.className.indexOf("open") === -1) {
+    menu.className = "open";
+    button.innerHTML = "&#10005;";
+  } else {
+    menu.className = "";
+    button.innerHTML = "&#9776;";
+  }
+}
+
+function showPage(id) {
+  var pages = document.querySelectorAll(".page");
+  for (var i = 0; i < pages.length; i++) {
+    pages[i].className = "page";
+  }
+  document.getElementById("page-" + id).className = "page active";
+
+  var items = document.querySelectorAll("#menu button");
+  for (var j = 0; j < items.length; j++) {
+    if (items[j].getAttribute("data-page") === id) {
+      items[j].className = "active";
+    } else {
+      items[j].className = "";
+    }
+  }
+
+  document.getElementById("menu").className = "";
+  document.getElementById("menuButton").innerHTML = "&#9776;";
+
+  if (id !== "add") { stopScan(); }
+  window.scrollTo(0, 0);
 }
 
 function readGS1(text) {
@@ -305,6 +407,8 @@ function addDrug() {
   document.getElementById("batch").value = "";
   document.getElementById("quantity").value = "";
   document.getElementById("expiry").value = "";
+
+  alert("Drug added. You can see it in Stock.");
 }
 
 function sellDrug(index) {
@@ -378,4 +482,4 @@ function showDrugs() {
 showDrugs();
 </script>
 </body>
-</html>
+ </html>
