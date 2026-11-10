@@ -110,12 +110,13 @@
   .big-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
   .big-buttons button { flex: 1 1 140px; }
   .scan-buttons { display: flex; gap: 8px; margin-bottom: 8px; }
+  .button-row { display: flex; gap: 8px; flex-wrap: wrap; }
   #reader { width: 100%; max-width: 320px; }
   .table-wrap { overflow-x: auto; }
   table { border-collapse: collapse; width: 100%; font-size: 14px; }
   th { background: #0b6e4f; color: white; padding: 9px; text-align: left; }
   td { padding: 9px; border-bottom: 1px solid #e0e6ea; }
-  .about p, .contact p { line-height: 1.5; margin: 8px 0; }
+  .about p, .contact p, .account p { line-height: 1.5; margin: 8px 0; }
   footer { text-align: center; padding: 16px; font-size: 12px; color: #607d8b; }
 </style>
 </head>
@@ -133,6 +134,7 @@
   <button data-page="home" class="active" onclick="showPage('home')">Home</button>
   <button data-page="add" onclick="showPage('add')">Add drug</button>
   <button data-page="stock" onclick="showPage('stock')">Stock</button>
+  <button data-page="account" onclick="showPage('account')">Account</button>
   <button data-page="about" onclick="showPage('about')">About</button>
   <button data-page="contact" onclick="showPage('contact')">Contact</button>
 </nav>
@@ -190,12 +192,31 @@
     </div>
   </div>
 
+  <div class="page" id="page-account">
+    <div class="card account">
+      <h2>Account</h2>
+      <p id="accountStatus"></p>
+      <div id="loginForms">
+        <input id="loginEmail" type="email" placeholder="Email">
+        <input id="loginPassword" type="password" placeholder="Password (at least 6 characters)">
+        <div class="button-row">
+          <button onclick="logIn()">Log in</button>
+          <button class="grey" onclick="signUp()">Sign up</button>
+        </div>
+        <p><a href="#" onclick="resetPassword(); return false;">Forgot password?</a></p>
+      </div>
+      <div id="logoutBox" style="display:none">
+        <button class="grey" onclick="logOut()">Log out</button>
+      </div>
+    </div>
+  </div>
+
   <div class="page" id="page-about">
     <div class="card about">
       <h2>About</h2>
       <p>PharmaStock helps pharmacists follow their stock and see which drugs are close to their expiry date, so they can sell them first.</p>
       <p>Created by Ishimwe Elisee, pharmacy student.</p>
-      <p><b>Privacy:</b> the drugs you add are saved only on your own phone. Nobody else can see them.</p>
+      <p><b>Privacy:</b> if you are not logged in, your drugs are saved only on your own phone. If you log in, they are saved in your own online account, and other users cannot see them.</p>
     </div>
   </div>
 
@@ -213,24 +234,159 @@
 <footer>pharmaElistock © 2026</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
+// ===== PASTE YOUR FIREBASE CONFIG HERE (replace the values between the quotes) =====
+var firebaseConfig = {
+  apiKey: "PASTE_API_KEY",
+  authDomain: "PASTE_AUTH_DOMAIN",
+  projectId: "PASTE_PROJECT_ID",
+  storageBucket: "PASTE_STORAGE_BUCKET",
+  messagingSenderId: "PASTE_SENDER_ID",
+  appId: "PASTE_APP_ID"
+};
+// ===================================================================================
+
 var drugs = [];
 var barcodes = {};
 var scanner = null;
+var auth = null;
+var db = null;
+var currentUser = null;
+var cloudReady = firebaseConfig.apiKey.indexOf("PASTE") === -1 && typeof firebase !== "undefined";
 
-try {
-  drugs = JSON.parse(localStorage.getItem("drugs")) || [];
-  barcodes = JSON.parse(localStorage.getItem("barcodes")) || {};
-} catch (e) {
-  drugs = [];
-  barcodes = {};
+function loadLocal() {
+  try {
+    drugs = JSON.parse(localStorage.getItem("drugs")) || [];
+    barcodes = JSON.parse(localStorage.getItem("barcodes")) || {};
+  } catch (e) {
+    drugs = [];
+    barcodes = {};
+  }
+  showDrugs();
+}
+
+function loadCloud() {
+  db.collection("users").doc(currentUser.uid).get().then(function (doc) {
+    if (doc.exists) {
+      var data = doc.data();
+      drugs = data.drugs || [];
+      barcodes = data.barcodes || {};
+    } else {
+      drugs = [];
+      barcodes = {};
+    }
+    showDrugs();
+  }).catch(function (e) {
+    alert("Could not load your stock: " + e.message);
+  });
 }
 
 function saveDrugs() {
+  if (currentUser && db) {
+    db.collection("users").doc(currentUser.uid).set({
+      drugs: drugs,
+      barcodes: barcodes
+    }).catch(function (e) {
+      alert("Could not save online: " + e.message);
+    });
+  } else {
+    try {
+      localStorage.setItem("drugs", JSON.stringify(drugs));
+      localStorage.setItem("barcodes", JSON.stringify(barcodes));
+    } catch (e) {}
+  }
+}
+
+function updateAccountBox() {
+  var status = document.getElementById("accountStatus");
+  var forms = document.getElementById("loginForms");
+  var out = document.getElementById("logoutBox");
+
+  if (!cloudReady) {
+    status.innerHTML = "Online accounts are not set up yet. Your drugs are saved only on this phone.";
+    forms.style.display = "none";
+    out.style.display = "none";
+  } else if (currentUser) {
+    status.innerHTML = "Logged in as <b>" + currentUser.email + "</b>. Your drugs are saved in your online account.";
+    forms.style.display = "none";
+    out.style.display = "block";
+  } else {
+    status.innerHTML = "You are not logged in. Your drugs are saved only on this phone. Sign up or log in to keep them online.";
+    forms.style.display = "block";
+    out.style.display = "none";
+  }
+}
+
+function signUp() {
+  var email = document.getElementById("loginEmail").value;
+  var password = document.getElementById("loginPassword").value;
+  if (email === "" || password === "") {
+    alert("Please enter your email and a password.");
+    return;
+  }
+  auth.createUserWithEmailAndPassword(email, password).then(function () {
+    document.getElementById("loginPassword").value = "";
+    showPage("home");
+  }).catch(function (e) {
+    alert(e.message);
+  });
+}
+
+function logIn() {
+  var email = document.getElementById("loginEmail").value;
+  var password = document.getElementById("loginPassword").value;
+  if (email === "" || password === "") {
+    alert("Please enter your email and password.");
+    return;
+  }
+  auth.signInWithEmailAndPassword(email, password).then(function () {
+    document.getElementById("loginPassword").value = "";
+    showPage("home");
+  }).catch(function (e) {
+    alert(e.message);
+  });
+}
+
+function logOut() {
+  auth.signOut();
+}
+
+function resetPassword() {
+  var email = document.getElementById("loginEmail").value;
+  if (email === "") {
+    alert("Type your email in the Email box first.");
+    return;
+  }
+  auth.sendPasswordResetEmail(email).then(function () {
+    alert("We sent you an email to reset your password.");
+  }).catch(function (e) {
+    alert(e.message);
+  });
+}
+
+if (cloudReady) {
   try {
-    localStorage.setItem("drugs", JSON.stringify(drugs));
-    localStorage.setItem("barcodes", JSON.stringify(barcodes));
-  } catch (e) {}
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+    auth.onAuthStateChanged(function (user) {
+      currentUser = user;
+      if (user) {
+        loadCloud();
+      } else {
+        loadLocal();
+      }
+      updateAccountBox();
+    });
+  } catch (e) {
+    cloudReady = false;
+    loadLocal();
+  }
+} else {
+  loadLocal();
 }
 
 function toggleMenu() {
@@ -479,7 +635,7 @@ function showDrugs() {
   document.getElementById("lowCount").innerHTML = lowCount;
 }
 
-showDrugs();
+updateAccountBox();
 </script>
 </body>
- </html>
+       </html>
