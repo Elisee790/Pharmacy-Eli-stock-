@@ -130,18 +130,20 @@
   <div class="card about" id="about">
     <h2>About</h2>
     <p>PharmaStock helps pharmacists follow their stock and see which drugs are close to their expiry date, so they can sell them first.</p>
-    <p>It was created by Elisee ISHIMWE, Pharmacy student.</p>
+    <p>Created by Ishimwe Elisee, pharmacy student.</p>
     <p><b>Privacy:</b> the drugs you add are saved only on your own phone. Nobody else can see them.</p>
   </div>
 
   <div class="card contact" id="contact">
-    <h2>contact</h2>
-    <p>Questions or ideas? email to: ishimweeli501@gmail.com or call +250793284165</p>
+    <h2>Contact</h2>
+    <p><b>ISHIMWE Elisee</b></p>
+    <p>Email: <a href="mailto:ishimweeli501@gmail.com">ishimweeli501@gmail.com</a></p>
+    <p>Phone: <a href="tel:+250793284164">+250793284164</a></p>
   </div>
 
 </main>
 
-<footer>PharmaEliStock © 2026 - created by ISHIMWE</footer>
+<footer>pharmaElistock © 2026</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
@@ -364,4 +366,16 @@ function showDrugs() {
       "<tr style='background:" + color + "'><td>" + d.name + "</td><td>" +
       d.batch + "</td><td>" + quantityText + "</td><td>" + d.expiry +
       "</td><td>" + daysLeft + "</td><td><button class='sell' onclick='sellDrug(" + i +
-      ")'>Sell 1</button></td><td><button class='delete' onclick='delet
+      ")'>Sell 1</button></td><td><button class='delete' onclick='deleteDrug(" + i +
+      ")'>Delete</button></td></tr>";
+  }
+
+  document.getElementById("expiredCount").innerHTML = expiredCount;
+  document.getElementById("soonCount").innerHTML = soonCount;
+  document.getElementById("lowCount").innerHTML = lowCount;
+}
+
+showDrugs();
+</script>
+</body>
+</html>
