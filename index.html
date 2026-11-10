@@ -1,42 +1,292 @@
-<h1>Pharmacy Eli stock</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PharmaStock</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f2f6f8;
+    color: #1f2d3a;
+  }
+  header {
+    background: #0b6e4f;
+    color: white;
+    padding: 18px 16px;
+  }
+  header h1 { margin: 0; font-size: 24px; }
+  header p { margin: 4px 0 0; font-size: 14px; opacity: 0.9; }
+  main { padding: 14px; max-width: 900px; margin: 0 auto; }
+  .card {
+    background: white;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  }
+  .card h2 { margin: 0 0 10px; font-size: 17px; }
+  .summary { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge {
+    flex: 1 1 90px;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    font-size: 13px;
+  }
+  .badge b { display: block; font-size: 24px; }
+  .badge.red { background: #ffcdd2; }
+  .badge.orange { background: #ffe0b2; }
+  .badge.blue { background: #bbdefb; }
+  input {
+    width: 100%;
+    padding: 11px;
+    margin-bottom: 8px;
+    border: 1px solid #c5d0d8;
+    border-radius: 8px;
+    font-size: 16px;
+  }
+  button {
+    padding: 11px 14px;
+    border: none;
+    border-radius: 8px;
+    background: #0b6e4f;
+    color: white;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  button.grey { background: #607d8b; }
+  button.sell { background: #1976d2; padding: 8px 10px; font-size: 13px; }
+  button.delete { background: #c62828; padding: 8px 10px; font-size: 13px; }
+  .scan-buttons { display: flex; gap: 8px; margin-bottom: 8px; }
+  #reader { width: 100%; max-width: 320px; }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th { background: #0b6e4f; color: white; padding: 9px; text-align: left; }
+  td { padding: 9px; border-bottom: 1px solid #e0e6ea; }
+  footer { text-align: center; padding: 16px; font-size: 12px; color: #607d8b; }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo svg { width: 38px; height: 38px; }
+  nav { margin-top: 10px; }
+  nav a { color: white; margin-right: 14px; font-size: 14px; text-decoration: underline; }
+  .about p, .contact p { line-height: 1.5; margin: 6px 0; }
+</style>
+</head>
+<body>
 
-<p id="summary"></p>
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="white"/><rect x="17" y="8" width="6" height="24" fill="#0b6e4f"/><rect x="8" y="17" width="24" height="6" fill="#0b6e4f"/></svg>
+    <h1>PharmaStock</h1>
+  </div>
+  <p>Control your stock. Avoid expired drugs.</p>
+  <nav>
+    <a href="#about">About</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
 
-<input id="name" placeholder="Drug name">
-<input id="batch" placeholder="Batch number">
-<input id="quantity" type="number" placeholder="Quantity">
-<input id="expiry" type="date">
-<button onclick="addDrug()">Add drug</button>
+<main>
 
-<p><input id="search" placeholder="Search a drug" oninput="showDrugs()"></p>
+  <div class="card">
+    <h2>Today's alerts</h2>
+    <div class="summary">
+      <div class="badge red"><b id="expiredCount">0</b>Expired</div>
+      <div class="badge orange"><b id="soonCount">0</b>Expiring in 30 days</div>
+      <div class="badge blue"><b id="lowCount">0</b>Low stock</div>
+    </div>
+  </div>
 
-<table border="1">
-  <thead>
-    <tr><th>Name</th><th>Batch</th><th>Quantity</th><th>Expiry</th><th>Days left</th><th>Sell</th><th>Delete</th></tr>
-  </thead>
-  <tbody id="stockList"></tbody>
-</table>
+  <div class="card">
+    <h2>Add a drug</h2>
+    <div class="scan-buttons">
+      <button onclick="startScan()">Scan code</button>
+      <button class="grey" onclick="stopScan()">Close camera</button>
+    </div>
+    <div id="reader"></div>
+    <input id="barcode" placeholder="Barcode number">
+    <input id="name" placeholder="Drug name">
+    <input id="batch" placeholder="Batch number">
+    <input id="quantity" type="number" placeholder="Quantity">
+    <input id="expiry" type="date">
+    <button onclick="addDrug()">Add drug</button>
+  </div>
 
+  <div class="card">
+    <h2>Your stock</h2>
+    <input id="search" placeholder="Search a drug" oninput="showDrugs()">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Batch</th><th>Quantity</th><th>Expiry</th><th>Days left</th><th>Sell</th><th>Delete</th></tr>
+        </thead>
+        <tbody id="stockList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card about" id="about">
+    <h2>About</h2>
+    <p>PharmaStock helps pharmacists follow their stock and see which drugs are close to their expiry date, so they can sell them first.</p>
+    <p>It was created by Elisee ISHIMWE, Pharmacy student.</p>
+    <p><b>Privacy:</b> the drugs you add are saved only on your own phone. Nobody else can see them.</p>
+  </div>
+
+  <div class="card contact" id="contact">
+    <h2>contact</h2>
+    <p>Questions or ideas? email to: ishimweeli501@gmail.com or call +250793284165</p>
+  </div>
+
+</main>
+
+<footer>PharmaEliStock © 2026 - created by ISHIMWE</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 var drugs = [];
+var barcodes = {};
+var scanner = null;
 
 try {
   drugs = JSON.parse(localStorage.getItem("drugs")) || [];
+  barcodes = JSON.parse(localStorage.getItem("barcodes")) || {};
 } catch (e) {
   drugs = [];
+  barcodes = {};
 }
 
 function saveDrugs() {
   try {
     localStorage.setItem("drugs", JSON.stringify(drugs));
+    localStorage.setItem("barcodes", JSON.stringify(barcodes));
   } catch (e) {}
+}
+
+function readGS1(text) {
+  var result = {};
+  var GS = String.fromCharCode(29);
+  text = text.replace(/^\]d2/, "");
+
+  if (text.indexOf("(01)") === 0) {
+    var re = /\((\d{2})\)([^(]*)/g;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      if (m[1] === "01") { result.gtin = m[2]; }
+      if (m[1] === "17") { result.expiry = m[2]; }
+      if (m[1] === "10") { result.batch = m[2]; }
+    }
+    return result;
+  }
+
+  if (text.length < 17 || text.indexOf("01") !== 0) {
+    return result;
+  }
+
+  var i = 0;
+  while (i < text.length) {
+    var ai = text.substr(i, 2);
+    if (ai === "01") {
+      result.gtin = text.substr(i + 2, 14);
+      i += 16;
+    } else if (ai === "17") {
+      result.expiry = text.substr(i + 2, 6);
+      i += 8;
+    } else if (ai === "11" || ai === "15") {
+      i += 8;
+    } else if (ai === "10" || ai === "21") {
+      var end = text.indexOf(GS, i + 2);
+      if (end === -1) { end = text.length; }
+      if (ai === "10") { result.batch = text.substring(i + 2, end); }
+      i = end + 1;
+    } else {
+      break;
+    }
+  }
+  return result;
+}
+
+function expiryToDate(yymmdd) {
+  if (!yymmdd || yymmdd.length !== 6) { return ""; }
+  var year = 2000 + Number(yymmdd.substr(0, 2));
+  var month = Number(yymmdd.substr(2, 2));
+  var day = Number(yymmdd.substr(4, 2));
+  if (day === 0) {
+    day = new Date(year, month, 0).getDate();
+  }
+  var mm = month < 10 ? "0" + month : "" + month;
+  var dd = day < 10 ? "0" + day : "" + day;
+  return year + "-" + mm + "-" + dd;
+}
+
+function startScan() {
+  if (scanner) { return; }
+  scanner = new Html5Qrcode("reader", {
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.DATA_MATRIX,
+      Html5QrcodeSupportedFormats.QR_CODE,
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.CODE_128
+    ],
+    experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+    verbose: false
+  });
+  scanner.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: { width: 250, height: 250 } },
+    function (text) {
+      stopScan();
+      var data = readGS1(text);
+
+      if (data.gtin) {
+        document.getElementById("barcode").value = data.gtin;
+        if (data.batch) { document.getElementById("batch").value = data.batch; }
+        if (data.expiry) { document.getElementById("expiry").value = expiryToDate(data.expiry); }
+        if (barcodes[data.gtin]) {
+          document.getElementById("name").value = barcodes[data.gtin];
+        } else {
+          alert("New drug. Please type its name.");
+        }
+      } else {
+        document.getElementById("barcode").value = text;
+        if (barcodes[text]) {
+          document.getElementById("name").value = barcodes[text];
+        } else {
+          alert("New drug. Please type its name.");
+        }
+      }
+    },
+    function () {}
+  ).catch(function (err) {
+    alert("Camera problem: " + err);
+    scanner = null;
+  });
+}
+
+function stopScan() {
+  if (scanner) {
+    scanner.stop().then(function () {
+      scanner.clear();
+      scanner = null;
+    }).catch(function () {
+      scanner = null;
+    });
+  }
 }
 
 function addDrug() {
   var name = document.getElementById("name").value;
+  var barcode = document.getElementById("barcode").value;
+
   if (name === "" || document.getElementById("expiry").value === "") {
     alert("Please enter the drug name and expiry date.");
     return;
+  }
+
+  if (barcode !== "") {
+    barcodes[barcode] = name;
   }
 
   drugs.push({
@@ -47,6 +297,12 @@ function addDrug() {
   });
   saveDrugs();
   showDrugs();
+
+  document.getElementById("barcode").value = "";
+  document.getElementById("name").value = "";
+  document.getElementById("batch").value = "";
+  document.getElementById("quantity").value = "";
+  document.getElementById("expiry").value = "";
 }
 
 function sellDrug(index) {
@@ -82,12 +338,12 @@ function showDrugs() {
     var d = drugs[i];
     var daysLeft = Math.floor((new Date(d.expiry) - new Date()) / 86400000);
 
-    var color = "lightgreen";
+    var color = "#d4f5dd";
     if (daysLeft < 0) {
-      color = "tomato";
+      color = "#ffcdd2";
       expiredCount++;
     } else if (daysLeft <= 30) {
-      color = "orange";
+      color = "#ffe0b2";
       soonCount++;
     }
 
@@ -107,15 +363,5 @@ function showDrugs() {
     list.innerHTML +=
       "<tr style='background:" + color + "'><td>" + d.name + "</td><td>" +
       d.batch + "</td><td>" + quantityText + "</td><td>" + d.expiry +
-      "</td><td>" + daysLeft + "</td><td><button onclick='sellDrug(" + i +
-      ")'>Sell 1</button></td><td><button onclick='deleteDrug(" + i +
-      ")'>Delete</button></td></tr>";
-  }
-
-  document.getElementById("summary").innerHTML =
-    "<b>Expired: " + expiredCount + "</b> | Expiring within 30 days: " +
-    soonCount + " | Low stock: " + lowCount;
-}
-
-showDrugs();
-  </script>
+      "</td><td>" + daysLeft + "</td><td><button class='sell' onclick='sellDrug(" + i +
+      ")'>Sell 1</button></td><td><button class='delete' onclick='delet
