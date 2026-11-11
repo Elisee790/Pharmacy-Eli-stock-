@@ -616,4 +616,113 @@ function stopScan() {
   }
 }
 
-function addDrug
+function addDrug() {
+  var name = document.getElementById("name").value;
+  var barcode = document.getElementById("barcode").value;
+
+  if (name === "" || document.getElementById("expiry").value === "") {
+    alert("Please enter the drug name and expiry date.");
+    return;
+  }
+
+  if (barcode !== "") {
+    barcodes[barcode] = name;
+  }
+
+  drugs.push({
+    name: name,
+    batch: document.getElementById("batch").value,
+    quantity: Number(document.getElementById("quantity").value),
+    expiry: document.getElementById("expiry").value
+  });
+  saveDrugs();
+  showDrugs();
+
+  document.getElementById("barcode").value = "";
+  document.getElementById("name").value = "";
+  document.getElementById("batch").value = "";
+  document.getElementById("quantity").value = "";
+  document.getElementById("expiry").value = "";
+
+  alert("Drug added. You can see it in Stock.");
+}
+
+function sellDrug(index) {
+  if (drugs[index].quantity > 0) {
+    drugs[index].quantity = drugs[index].quantity - 1;
+  }
+  saveDrugs();
+  showDrugs();
+}
+
+function deleteDrug(index) {
+  if (confirm("Delete this drug?")) {
+    drugs.splice(index, 1);
+    saveDrugs();
+    showDrugs();
+  }
+}
+
+function showDrugs() {
+  drugs.sort(function (a, b) {
+    return new Date(a.expiry) - new Date(b.expiry);
+  });
+
+  var searchText = document.getElementById("search").value.toLowerCase();
+  var list = document.getElementById("stockList");
+  list.innerHTML = "";
+
+  var expiredCount = 0;
+  var soonCount = 0;
+  var lowCount = 0;
+
+  for (var i = 0; i < drugs.length; i++) {
+    var d = drugs[i];
+    var daysLeft = Math.floor((new Date(d.expiry) - new Date()) / 86400000);
+
+    var color = "#d4f5dd";
+    if (daysLeft < 0) {
+      color = "#ffcdd2";
+      expiredCount++;
+    } else if (daysLeft <= 30) {
+      color = "#ffe0b2";
+      soonCount++;
+    }
+
+    if (d.quantity <= 5) {
+      lowCount++;
+    }
+
+    if (d.name.toLowerCase().indexOf(searchText) === -1) {
+      continue;
+    }
+
+    var quantityText = d.quantity;
+    if (d.quantity <= 5) {
+      quantityText = d.quantity + " <b style='color:red'>LOW</b>";
+    }
+
+    list.innerHTML +=
+      "<tr style='background:" + color + "'><td>" + d.name + "</td><td>" +
+      d.batch + "</td><td>" + quantityText + "</td><td>" + d.expiry +
+      "</td><td>" + daysLeft + "</td><td><button class='sell' onclick='sellDrug(" + i +
+      ")'>Sell 1</button></td><td><button class='delete' onclick='deleteDrug(" + i +
+      ")'>Delete</button></td></tr>";
+  }
+
+  document.getElementById("expiredCount").innerHTML = expiredCount;
+  document.getElementById("soonCount").innerHTML = soonCount;
+  document.getElementById("lowCount").innerHTML = lowCount;
+}
+
+var slideIndex = 0;
+setInterval(function () {
+  var slides = document.querySelectorAll(".bg img");
+  if (slides.length === 0) { return; }
+  slides[slideIndex].className = "";
+  slideIndex = (slideIndex + 1) % slides.length;
+  slides[slideIndex].className = "show";
+}, 5000);
+</script>
+</body>
+</html>
