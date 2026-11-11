@@ -151,6 +151,7 @@
 
     <div class="card" id="loginBox" style="display:none">
       <h2>Create an account or log in</h2>
+      <p id="slowNote" style="display:none; font-size:13px; color:#b26a00">The connection is slow. If login does not work, check your internet and refresh the page.</p>
       <input id="loginEmail" type="email" placeholder="Email">
       <input id="loginPassword" type="password" placeholder="Password (at least 6 characters)">
       <div class="button-row">
@@ -299,6 +300,7 @@ var scanner = null;
 var auth = null;
 var db = null;
 var currentUser = null;
+var authChecked = false;
 
 function showAuthScreen(which) {
   document.getElementById("authScreen").style.display = "block";
@@ -437,22 +439,34 @@ function resetPassword() {
 if (typeof firebase === "undefined") {
   document.getElementById("loadingText").innerHTML = "Cannot connect. Please check your internet and refresh the page.";
 } else {
-  firebase.initializeApp(firebaseConfig);
-  auth = firebase.auth();
-  db = firebase.firestore();
-  auth.onAuthStateChanged(function (user) {
-    currentUser = user;
-    if (!user) {
-      drugs = [];
-      barcodes = {};
+  try {
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+    auth.onAuthStateChanged(function (user) {
+      authChecked = true;
+      currentUser = user;
+      if (!user) {
+        drugs = [];
+        barcodes = {};
+        showAuthScreen("loginBox");
+      } else if (!user.emailVerified) {
+        document.getElementById("verifyEmail").innerHTML = user.email;
+        showAuthScreen("verifyBox");
+      } else {
+        showApp();
+      }
+    });
+  } catch (e) {
+    document.getElementById("loadingText").innerHTML = "Could not start. Please refresh the page.";
+  }
+
+  setTimeout(function () {
+    if (!authChecked && auth) {
       showAuthScreen("loginBox");
-    } else if (!user.emailVerified) {
-      document.getElementById("verifyEmail").innerHTML = user.email;
-      showAuthScreen("verifyBox");
-    } else {
-      showApp();
+      document.getElementById("slowNote").style.display = "block";
     }
-  });
+  }, 8000);
 }
 
 function toggleMenu() {
@@ -602,26 +616,4 @@ function stopScan() {
   }
 }
 
-function addDrug() {
-  var name = document.getElementById("name").value;
-  var barcode = document.getElementById("barcode").value;
-
-  if (name === "" || document.getElementById("expiry").value === "") {
-    alert("Please enter the drug name and expiry date.");
-    return;
-  }
-
-  if (barcode !== "") {
-    barcodes[barcode] = name;
-  }
-
-  drugs.push({
-    name: name,
-    batch: document.getElementById("batch").value,
-    quantity: Number(document.getElementById("quantity").value),
-    expiry: document.getElementById("expiry").value
-  });
-  saveDrugs();
-  showDrugs();
-
-  
+function addDrug
