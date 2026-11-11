@@ -14,7 +14,7 @@
   }
   .bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #f2f6f8; }
   .bg img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 2s; }
-  .bg img.show { opacity: 0.3; }
+  .bg img.show { opacity: 0.4; }
   header {
     position: sticky;
     top: 0;
@@ -61,6 +61,11 @@
   main { padding: 14px; max-width: 900px; margin: 0 auto; }
   .page { display: none; }
   .page.active { display: block; }
+  .auth { max-width: 420px; margin: 0 auto; padding: 30px 14px; }
+  .auth-title { text-align: center; margin-bottom: 16px; }
+  .auth-title svg { width: 60px; height: 60px; }
+  .auth-title h1 { margin: 8px 0 4px; font-size: 26px; color: #0b6e4f; }
+  .auth-title p { margin: 0; font-size: 14px; color: #37474f; }
   .hero {
     background: rgba(11,110,79,0.92);
     color: white;
@@ -71,7 +76,7 @@
   .hero h1 { margin: 0 0 8px; font-size: 24px; }
   .hero p { margin: 0; font-size: 15px; opacity: 0.95; }
   .card {
-    background: rgba(255,255,255,0.88);
+    background: rgba(255,255,255,0.9);
     border-radius: 10px;
     padding: 14px;
     margin-bottom: 14px;
@@ -114,22 +119,63 @@
   .big-buttons button { flex: 1 1 140px; }
   .scan-buttons { display: flex; gap: 8px; margin-bottom: 8px; }
   .button-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .button-row button { flex: 1 1 120px; }
   #reader { width: 100%; max-width: 320px; }
   .table-wrap { overflow-x: auto; }
   table { border-collapse: collapse; width: 100%; font-size: 14px; }
   th { background: #0b6e4f; color: white; padding: 9px; text-align: left; }
   td { padding: 9px; border-bottom: 1px solid #e0e6ea; }
-  .about p, .contact p, .account p { line-height: 1.5; margin: 8px 0; }
+  .about p, .contact p, .account p, .auth p { line-height: 1.5; margin: 8px 0; }
   footer { text-align: center; padding: 16px; font-size: 12px; color: #37474f; }
 </style>
 </head>
 <body>
 
 <div class="bg">
-  <img src="pharmacy1%20.jpg" class="show" alt="">
-  <img src="pharmacy2%20.jpg" alt="">
-  <img src="pharmacy3%20.jpg" alt="">
+  <img src="pharmacy4.jpg" class="show" alt="">
+  <img src="pharmacy5.jpg" alt="">
+  <img src="pharmacy6.jpg" alt="">
 </div>
+
+<div id="authScreen">
+  <div class="auth">
+    <div class="auth-title">
+      <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="19" fill="#0b6e4f"/><rect x="17" y="8" width="6" height="24" fill="white"/><rect x="8" y="17" width="24" height="6" fill="white"/></svg>
+      <h1>PharmaStock</h1>
+      <p>Control your stock. Avoid expired drugs.</p>
+    </div>
+
+    <div class="card" id="loadingBox">
+      <p id="loadingText">Loading...</p>
+    </div>
+
+    <div class="card" id="loginBox" style="display:none">
+      <h2>Create an account or log in</h2>
+      <input id="loginEmail" type="email" placeholder="Email">
+      <input id="loginPassword" type="password" placeholder="Password (at least 6 characters)">
+      <div class="button-row">
+        <button onclick="signUp()">Create account</button>
+        <button class="grey" onclick="logIn()">Log in</button>
+      </div>
+      <p><a href="#" onclick="resetPassword(); return false;">Forgot password?</a></p>
+      <p style="font-size:13px">After you create an account, we send you an email. Tap the link in it to confirm your address.</p>
+    </div>
+
+    <div class="card" id="verifyBox" style="display:none">
+      <h2>Check your email</h2>
+      <p>We sent a verification email to <b id="verifyEmail"></b>.</p>
+      <p>Open the email, tap the link, then come back here and tap the button below.</p>
+      <p style="font-size:13px">Cannot find it? Look in your Spam or Junk folder.</p>
+      <div class="button-row">
+        <button onclick="checkVerified()">I have verified</button>
+        <button class="grey" onclick="resendEmail()">Send again</button>
+      </div>
+      <p><a href="#" onclick="logOut(); return false;">Use another email (log out)</a></p>
+    </div>
+  </div>
+</div>
+
+<div id="appShell" style="display:none">
 
 <header>
   <div class="logo">
@@ -205,18 +251,7 @@
     <div class="card account">
       <h2>Account</h2>
       <p id="accountStatus"></p>
-      <div id="loginForms">
-        <input id="loginEmail" type="email" placeholder="Email">
-        <input id="loginPassword" type="password" placeholder="Password (at least 6 characters)">
-        <div class="button-row">
-          <button onclick="logIn()">Log in</button>
-          <button class="grey" onclick="signUp()">Sign up</button>
-        </div>
-        <p><a href="#" onclick="resetPassword(); return false;">Forgot password?</a></p>
-      </div>
-      <div id="logoutBox" style="display:none">
-        <button class="grey" onclick="logOut()">Log out</button>
-      </div>
+      <button class="grey" onclick="logOut()">Log out</button>
     </div>
   </div>
 
@@ -225,7 +260,7 @@
       <h2>About</h2>
       <p>PharmaStock helps pharmacists follow their stock and see which drugs are close to their expiry date, so they can sell them first.</p>
       <p>Created by Ishimwe Elisee, pharmacy student.</p>
-      <p><b>Privacy:</b> if you are not logged in, your drugs are saved only on your own phone. If you log in, they are saved in your own online account, and other users cannot see them.</p>
+      <p><b>Privacy:</b> your drugs are saved in your own online account. Other users cannot see them.</p>
     </div>
   </div>
 
@@ -241,6 +276,8 @@
 </main>
 
 <footer>pharmaElistock © 2026</footer>
+
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -262,17 +299,37 @@ var scanner = null;
 var auth = null;
 var db = null;
 var currentUser = null;
-var cloudReady = firebaseConfig.apiKey.indexOf("PASTE") === -1 && typeof firebase !== "undefined";
 
-function loadLocal() {
-  try {
-    drugs = JSON.parse(localStorage.getItem("drugs")) || [];
-    barcodes = JSON.parse(localStorage.getItem("barcodes")) || {};
-  } catch (e) {
-    drugs = [];
-    barcodes = {};
+function showAuthScreen(which) {
+  document.getElementById("authScreen").style.display = "block";
+  document.getElementById("appShell").style.display = "none";
+  var boxes = ["loadingBox", "loginBox", "verifyBox"];
+  for (var i = 0; i < boxes.length; i++) {
+    document.getElementById(boxes[i]).style.display = (boxes[i] === which) ? "block" : "none";
   }
-  showDrugs();
+  window.scrollTo(0, 0);
+}
+
+function showApp() {
+  document.getElementById("authScreen").style.display = "none";
+  document.getElementById("appShell").style.display = "block";
+  document.getElementById("accountStatus").innerHTML =
+    "Logged in as <b>" + currentUser.email + "</b>. Your drugs are saved in your online account.";
+  showPage("home");
+  loadCloud();
+}
+
+function friendlyError(e) {
+  var code = e.code || "";
+  if (code === "auth/email-already-in-use") { return "This email already has an account. Tap Log in instead."; }
+  if (code === "auth/weak-password") { return "The password is too short. Use at least 6 characters."; }
+  if (code === "auth/invalid-email") { return "This email address is not valid."; }
+  if (code === "auth/user-not-found" || code === "auth/wrong-password" || code === "auth/invalid-credential") {
+    return "Wrong email or password.";
+  }
+  if (code === "auth/too-many-requests") { return "Too many tries. Please wait a few minutes and try again."; }
+  if (code === "auth/network-request-failed") { return "No internet connection. Please try again."; }
+  return e.message;
 }
 
 function loadCloud() {
@@ -299,31 +356,6 @@ function saveDrugs() {
     }).catch(function (e) {
       alert("Could not save online: " + e.message);
     });
-  } else {
-    try {
-      localStorage.setItem("drugs", JSON.stringify(drugs));
-      localStorage.setItem("barcodes", JSON.stringify(barcodes));
-    } catch (e) {}
-  }
-}
-
-function updateAccountBox() {
-  var status = document.getElementById("accountStatus");
-  var forms = document.getElementById("loginForms");
-  var out = document.getElementById("logoutBox");
-
-  if (!cloudReady) {
-    status.innerHTML = "Online accounts are not set up yet. Your drugs are saved only on this phone.";
-    forms.style.display = "none";
-    out.style.display = "none";
-  } else if (currentUser) {
-    status.innerHTML = "Logged in as <b>" + currentUser.email + "</b>. Your drugs are saved in your online account.";
-    forms.style.display = "none";
-    out.style.display = "block";
-  } else {
-    status.innerHTML = "You are not logged in. Your drugs are saved only on this phone. Sign up or log in to keep them online.";
-    forms.style.display = "block";
-    out.style.display = "none";
   }
 }
 
@@ -334,11 +366,13 @@ function signUp() {
     alert("Please enter your email and a password.");
     return;
   }
-  auth.createUserWithEmailAndPassword(email, password).then(function () {
+  auth.createUserWithEmailAndPassword(email, password).then(function (cred) {
     document.getElementById("loginPassword").value = "";
-    showPage("home");
+    return cred.user.sendEmailVerification();
+  }).then(function () {
+    alert("Account created. We sent a verification email. Please open it.");
   }).catch(function (e) {
-    alert(e.message);
+    alert(friendlyError(e));
   });
 }
 
@@ -351,9 +385,35 @@ function logIn() {
   }
   auth.signInWithEmailAndPassword(email, password).then(function () {
     document.getElementById("loginPassword").value = "";
-    showPage("home");
   }).catch(function (e) {
-    alert(e.message);
+    alert(friendlyError(e));
+  });
+}
+
+function checkVerified() {
+  var user = auth.currentUser;
+  if (!user) { return; }
+  user.reload().then(function () {
+    if (user.emailVerified) {
+      return user.getIdToken(true).then(function () {
+        currentUser = user;
+        showApp();
+      });
+    } else {
+      alert("Your email is not verified yet. Open the email we sent, tap the link, then try again.");
+    }
+  }).catch(function (e) {
+    alert(friendlyError(e));
+  });
+}
+
+function resendEmail() {
+  var user = auth.currentUser;
+  if (!user) { return; }
+  user.sendEmailVerification().then(function () {
+    alert("We sent the email again. Check your inbox and your Spam folder.");
+  }).catch(function (e) {
+    alert(friendlyError(e));
   });
 }
 
@@ -370,30 +430,29 @@ function resetPassword() {
   auth.sendPasswordResetEmail(email).then(function () {
     alert("We sent you an email to reset your password.");
   }).catch(function (e) {
-    alert(e.message);
+    alert(friendlyError(e));
   });
 }
 
-if (cloudReady) {
-  try {
-    firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth();
-    db = firebase.firestore();
-    auth.onAuthStateChanged(function (user) {
-      currentUser = user;
-      if (user) {
-        loadCloud();
-      } else {
-        loadLocal();
-      }
-      updateAccountBox();
-    });
-  } catch (e) {
-    cloudReady = false;
-    loadLocal();
-  }
+if (typeof firebase === "undefined") {
+  document.getElementById("loadingText").innerHTML = "Cannot connect. Please check your internet and refresh the page.";
 } else {
-  loadLocal();
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+  auth.onAuthStateChanged(function (user) {
+    currentUser = user;
+    if (!user) {
+      drugs = [];
+      barcodes = {};
+      showAuthScreen("loginBox");
+    } else if (!user.emailVerified) {
+      document.getElementById("verifyEmail").innerHTML = user.email;
+      showAuthScreen("verifyBox");
+    } else {
+      showApp();
+    }
+  });
 }
 
 function toggleMenu() {
@@ -565,93 +624,4 @@ function addDrug() {
   saveDrugs();
   showDrugs();
 
-  document.getElementById("barcode").value = "";
-  document.getElementById("name").value = "";
-  document.getElementById("batch").value = "";
-  document.getElementById("quantity").value = "";
-  document.getElementById("expiry").value = "";
-
-  alert("Drug added. You can see it in Stock.");
-}
-
-function sellDrug(index) {
-  if (drugs[index].quantity > 0) {
-    drugs[index].quantity = drugs[index].quantity - 1;
-  }
-  saveDrugs();
-  showDrugs();
-}
-
-function deleteDrug(index) {
-  if (confirm("Delete this drug?")) {
-    drugs.splice(index, 1);
-    saveDrugs();
-    showDrugs();
-  }
-}
-
-function showDrugs() {
-  drugs.sort(function (a, b) {
-    return new Date(a.expiry) - new Date(b.expiry);
-  });
-
-  var searchText = document.getElementById("search").value.toLowerCase();
-  var list = document.getElementById("stockList");
-  list.innerHTML = "";
-
-  var expiredCount = 0;
-  var soonCount = 0;
-  var lowCount = 0;
-
-  for (var i = 0; i < drugs.length; i++) {
-    var d = drugs[i];
-    var daysLeft = Math.floor((new Date(d.expiry) - new Date()) / 86400000);
-
-    var color = "#d4f5dd";
-    if (daysLeft < 0) {
-      color = "#ffcdd2";
-      expiredCount++;
-    } else if (daysLeft <= 30) {
-      color = "#ffe0b2";
-      soonCount++;
-    }
-
-    if (d.quantity <= 5) {
-      lowCount++;
-    }
-
-    if (d.name.toLowerCase().indexOf(searchText) === -1) {
-      continue;
-    }
-
-    var quantityText = d.quantity;
-    if (d.quantity <= 5) {
-      quantityText = d.quantity + " <b style='color:red'>LOW</b>";
-    }
-
-    list.innerHTML +=
-      "<tr style='background:" + color + "'><td>" + d.name + "</td><td>" +
-      d.batch + "</td><td>" + quantityText + "</td><td>" + d.expiry +
-      "</td><td>" + daysLeft + "</td><td><button class='sell' onclick='sellDrug(" + i +
-      ")'>Sell 1</button></td><td><button class='delete' onclick='deleteDrug(" + i +
-      ")'>Delete</button></td></tr>";
-  }
-
-  document.getElementById("expiredCount").innerHTML = expiredCount;
-  document.getElementById("soonCount").innerHTML = soonCount;
-  document.getElementById("lowCount").innerHTML = lowCount;
-}
-
-updateAccountBox();
-
-var slideIndex = 0;
-setInterval(function () {
-  var slides = document.querySelectorAll(".bg img");
-  if (slides.length === 0) { return; }
-  slides[slideIndex].className = "";
-  slideIndex = (slideIndex + 1) % slides.length;
-  slides[slideIndex].className = "show";
-}, 5000);
-</script>
-</body>
- </html>
+  
