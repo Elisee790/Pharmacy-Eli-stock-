@@ -101,6 +101,14 @@
         <button class="grey" onclick="stopScan()">Close camera</button>
       </div>
       <div id="reader"></div>
+
+      <hr>
+      <p><b>Or take a photo of the box</b></p>
+      <input id="photoInput" type="file" accept="image/*" capture="environment" onchange="readPhoto(this)">
+      <p id="photoStatus"></p>
+      <div id="photoLines"></div>
+      <hr>
+
       <input id="barcode" placeholder="Barcode number">
       <input id="name" placeholder="Drug name">
       <input id="batch" placeholder="Batch number">
@@ -161,6 +169,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 <script src="script.js"></script>
 </body>
- </html>
+</html>
