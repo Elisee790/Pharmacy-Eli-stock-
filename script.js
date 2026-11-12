@@ -329,6 +329,104 @@ function stopScan() {
   }
 }
 
+function resizeImage(file, done) {
+  var img = new Image();
+  img.onload = function () {
+    var max = 1600;
+    var scale = Math.min(1, max / Math.max(img.width, img.height));
+    var canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(img.src);
+    canvas.toBlob(function (blob) { done(blob); }, "image/jpeg", 0.9);
+  };
+  img.onerror = function () { done(file); };
+  img.src = URL.createObjectURL(file);
+}
+
+function readPhoto(input) {
+  var file = input.files[0];
+  if (!file) { return; }
+
+  var status = document.getElementById("photoStatus");
+  document.getElementById("photoLines").innerHTML = "";
+
+  if (typeof Tesseract === "undefined") {
+    status.innerHTML = "The reading tool did not load. Check your internet and refresh the page.";
+    return;
+  }
+
+  status.innerHTML = "Preparing the photo...";
+  resizeImage(file, function (image) {
+    Tesseract.recognize(image, "eng", {
+      logger: function (m) {
+        if (m.status === "recognizing text") {
+          status.innerHTML = "Reading the photo... " + Math.round(m.progress * 100) + "%";
+        }
+      }
+    }).then(function (result) {
+      showPhotoResult(result.data.text);
+      input.value = "";
+    }).catch(function (e) {
+      status.innerHTML = "Could not read the photo: " + e.message;
+    });
+  });
+}
+
+function showPhotoResult(text) {
+  var status = document.getElementById("photoStatus");
+  var box = document.getElementById("photoLines");
+  var found = [];
+
+  var batchMatch = text.match(/(?:batch|lot|b\.?\s?no\.?|bn)\s*[:.\-]?\s*([A-Z0-9\-\/]{3,20})/i);
+  if (batchMatch) {
+    document.getElementById("batch").value = batchMatch[1];
+    found.push("batch");
+  }
+
+  var expMatch = text.match(/exp[a-z.]*\s*(?:date)?\s*[:.\-]?\s*(?:(\d{1,2})[\/\-. ])?(\d{1,2})[\/\-. ](\d{4}|\d{2})\b/i);
+  if (expMatch) {
+    var month = Number(expMatch[2]);
+    var year = Number(expMatch[3]);
+    if (year < 100) { year = year + 2000; }
+    if (month >= 1 && month <= 12) {
+      var day = expMatch[1] ? Number(expMatch[1]) : new Date(year, month, 0).getDate();
+      var mm = month < 10 ? "0" + month : "" + month;
+      var dd = day < 10 ? "0" + day : "" + day;
+      document.getElementById("expiry").value = year + "-" + mm + "-" + dd;
+      found.push("expiry date");
+    }
+  }
+
+  var lines = text.split("\n");
+  var shown = 0;
+  for (var i = 0; i < lines.length && shown < 12; i++) {
+    var line = lines[i].replace(/[|_~`^*=<>{}\[\]\\]/g, "").trim();
+    if (line.length < 3) { continue; }
+    var button = document.createElement("button");
+    button.className = "grey";
+    button.style.margin = "4px 4px 0 0";
+    button.style.textAlign = "left";
+    button.textContent = line;
+    button.addEventListener("click", (function (value) {
+      return function () { document.getElementById("name").value = value; };
+    })(line));
+    box.appendChild(button);
+    shown++;
+  }
+
+  if (shown === 0) {
+    status.innerHTML = "No text found. Try again with more light, closer to the box.";
+  } else {
+    var message = "Done. Tap the line that is the drug name.";
+    if (found.length > 0) {
+      message += " The app also filled: " + found.join(", ") + ". Please check it against the box.";
+    }
+    status.innerHTML = message;
+  }
+}
+
 function addDrug() {
   var name = document.getElementById("name").value;
   var barcode = document.getElementById("barcode").value;
@@ -356,6 +454,8 @@ function addDrug() {
   document.getElementById("batch").value = "";
   document.getElementById("quantity").value = "";
   document.getElementById("expiry").value = "";
+  document.getElementById("photoStatus").innerHTML = "";
+  document.getElementById("photoLines").innerHTML = "";
 
   alert("Drug added. You can see it in Stock.");
 }
